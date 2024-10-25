@@ -35,9 +35,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
-import axios from 'axios';
 import { useMainStore } from '@/stores/main';
 
 const mainStore = useMainStore();
@@ -50,13 +49,24 @@ const form = ref({
 
 async function login() {
   try {
-    const response = await axios.post(`${form.value.serverAddress}/auth/token`, {
-      username: form.value.username,
-      password: form.value.password,
+    const response = await fetch(`${form.value.serverAddress}/auth/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: form.value.username,
+        password: form.value.password,
+      }),
     });
 
-    mainStore.accessToken = response.data.accessToken;
-    mainStore.refreshToken = response.data.refreshToken;
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    mainStore.accessToken = data.accessToken;
+    mainStore.refreshToken = data.refreshToken;
   } catch (e) {
     console.log('e', e);
   }

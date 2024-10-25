@@ -1,11 +1,23 @@
 import { io, type Socket } from 'socket.io-client';
 import { useMainStore } from '@/stores/main';
+import { ConnectionStatus } from '@/enums/ConnectionStatus'
 
 class SocketManager {
   private socket: Socket | undefined;
 
+  public disconnect() {
+    if (this.socket && this.socket.connected) {
+      this.socket.disconnect();
+    }
+    this.socket = undefined;
+  }
+
   public connect() {
     const mainStore = useMainStore();
+
+    if (this.socket && this.socket.connected) {
+      this.socket.disconnect();
+    }
 
     this.socket = io(mainStore.serverAddress, {
       withCredentials: false,
@@ -19,18 +31,18 @@ class SocketManager {
     this.socket.removeAllListeners();
 
     this.socket.on('connect', () => {
-      mainStore.connectionStatus = 2;
+      mainStore.connectionStatus = ConnectionStatus.CONNECTED;
       this._onConnected();
     });
 
     this.socket.on('disconnect', () => {
       console.log('Socket disconnected');
-      mainStore.connectionStatus = 0;
+      // mainStore.connectionStatus = ConnectionStatus.DISCONNECTED;
     });
 
     this.socket.on('connect_error', () => {
       console.log('socket connect error');
-      mainStore.connectionStatus = 0;
+      mainStore.connectionStatus = ConnectionStatus.DISCONNECTED; // todo: handle reconnect later
     });
   }
 
